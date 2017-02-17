@@ -20,8 +20,12 @@ namespace MVCmovie.Controllers
         }
 
         // GET: Movies
-        public async Task<IActionResult> Index(string SearchString)
+        public async Task<IActionResult> Index(string SearchString, string movieGenre)
         {
+            IQueryable<string> genreQuery = from m in _context.Movie
+                                            orderby m.Genre
+                                            select m.Genre;
+
             var movies = from m in _context.Movie
                          select m; 
 
@@ -29,8 +33,16 @@ namespace MVCmovie.Controllers
             {
                 movies = movies.Where(s => s.Title.Contains(SearchString));
             }
+            if (!String.IsNullOrEmpty(movieGenre))
+            {
+                movies = movies.Where(s => s.Genre ==movieGenre);
+            }
 
-            return View(await movies.ToListAsync());
+            var movieGenreVM = new MovieGenreViewModel();
+            movieGenreVM.genres = new SelectList(await genreQuery.Distinct().ToListAsync());
+            movieGenreVM.movies = await movies.ToListAsync();
+
+            return View(movieGenreVM);
         }
 
         // GET: Movies/Details/5
@@ -61,7 +73,7 @@ namespace MVCmovie.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,Genre,Price,ReleaseDate,Title")] Movie movie)
+        public async Task<IActionResult> Create([Bind("ID,Genre,Price,ReleaseDate,Title,Rating")] Movie movie)
         {
             if (ModelState.IsValid)
             {
@@ -93,7 +105,7 @@ namespace MVCmovie.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ID,Genre,Price,ReleaseDate,Title")] Movie movie)
+        public async Task<IActionResult> Edit(int id, [Bind("ID,Genre,Price,ReleaseDate,Title,Rating")] Movie movie)
         {
             if (id != movie.ID)
             {
